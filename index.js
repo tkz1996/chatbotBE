@@ -1,31 +1,34 @@
 const express = require('express');
+const aiAdapter = require('./ai_adapter/groq_interface.js')
 const app = express();
 const defaultPort = 80;
+
+require('dotenv').config(); 
+
+var port = process.env.PORT || defaultPort;
+
+// parse request body as json using express library
+app.use(express.json())
 
 app.get('/test', (req, resp) => {
     console.log("/test API hit"); 
     resp.status(200).send('success');
 });
 
-app.get('/', (resp) => {
-    console.log("homepage hit");
-    resp.status(200).send('welcome');
-})
-
-var port = process.env.PORT || defaultPort;
-app.listen(port, function(req, resp){
-    console.log(`App available on http://localhost:%d`, port);
+app.post('/chat', (req, resp) => {
+    var chatResp;
+    console.log("message: %s", req.body);
+    aiAdapter.callChatBot(req.body['message']).then(function(message) {
+        chatResp = message;
+        resp.status(200).send(chatResp);
+    });
 });
 
-function gracefulshutdown() { 
-    console.log("Shutting down"); 
-    myApp.close(() => { 
-        console.log("HTTP server closed."); 
-          
-        // When server has stopped accepting connections  
-        // exit the process with exit status 0 
-        process.exit(0);  
-    }); 
-} 
-  
-process.on("SIGTERM", gracefulshutdown);
+app.get('/', (req, resp) => {
+    console.log("homepage hit");
+    resp.status(200).send('welcome');
+});
+
+app.listen(port, function(req, resp){
+    console.log(`App online on port:%d`, port);
+});
