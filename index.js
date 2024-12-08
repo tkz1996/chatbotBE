@@ -2,10 +2,12 @@ const express = require('express');
 const aiAdapter = require('./ai_adapter/groq_interface.js');
 const crypto = require("crypto");
 const app = express();
-const defaultPort = 80;
 const WebSocket = require('websocket');
 require('dotenv').config();
 var port = process.env.PORT || defaultPort;
+
+const defaultPort = 80;
+const defaultIP = '172.31.20.19';
 
 // parse request body as json using express library
 app.use(express.json())
@@ -16,13 +18,14 @@ app.get('/test', (req, resp) => {
     resp.status(200).send('success');
 });
 
-server = app.listen(port, function (req, resp) {
+server = app.listen(port, defaultIP, function (req, resp) {
     console.log(`App online on port:%d`, port);
 })
 
 // init websockets
 var webSocketServer = new WebSocket.server({
     httpServer: server,
+    
 });
 
 webSocketServer.on('request', (request) => {
