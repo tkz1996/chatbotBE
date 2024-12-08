@@ -4,10 +4,11 @@ const crypto = require("crypto");
 const app = express();
 const WebSocket = require('websocket');
 require('dotenv').config();
-var port = process.env.PORT || defaultPort;
 
 const defaultPort = 80;
 const defaultIP = '172.31.20.19';
+
+var port = process.env.PORT || defaultPort;
 
 // parse request body as json using express library
 app.use(express.json())
