@@ -38,7 +38,7 @@ function buildReq(message) {
 }
 
 module.exports = {
-    callChatBot: function callGroqAPI(message) {
+    callChatBot: async function callGroqAPI(message) {
         return new Promise((resolve, reject) => {
             dataString = buildReq(message);
             options = generateOptions(dataString.length);
@@ -60,5 +60,13 @@ module.exports = {
             request.write(dataString);
             request.end();
         })
+    },
+    buildChatBotResponse: function buildGroqResp(name, groqResp) {
+        payload = JSON.stringify({
+            type: "message",
+            message: groqResp,
+            userName: name,
+        });
+        return payload
     }
 };
