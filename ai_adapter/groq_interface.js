@@ -1,10 +1,11 @@
 const https = require('https');
 const groqUsername = "GroqAI";
 require('dotenv').config();
+const dynamoDb = require('../db/logic.js');
 
 var groqApiKey = process.env.GROQAPIKEY;
 // To refactor into database to store
-var chatHistory = {}
+var chatHistories = {}
 
 function generateOptions(objectLength) {
     var postheaders = {
@@ -32,29 +33,30 @@ function buildReq(history) {
     return dataString
 }
 
-function appendHistory(recipient, role, message) {
-    if (!(recipient in chatHistory)) {
-        chatHistory[recipient] = [
+function appendHistory(username, role, message) {
+    if (!(username in chatHistories)) {
+        chatHistories[username] = [
             {
                 role: 'system',
                 content: 'You are a friendly chat bot and your purpose is to interact with the user and answer their questions.'
             }
         ]
     }
-    chatHistory[recipient].push(
+    var chatHistory = chatHistories[username]
+    chatHistory.push(
         {
             role: role,
             content: message
         }
     )
-    return chatHistory[recipient]
+    return chatHistory
 }
 
 module.exports = {
-    callChatBot: async function callGroqAPI(recipient, message) {
+    callChatBot: async function callGroqAPI(username, message) {
         return new Promise((resolve, reject) => {
-            // To persist requested message and entire history here
-            history = appendHistory(recipient, "user", message)
+            history = appendHistory(username, "user", message);
+
             dataString = buildReq(history);
             options = generateOptions(dataString.length);
             request = https.request(options, resp => {
@@ -69,7 +71,7 @@ module.exports = {
                     groqResp = JSON.parse(respData.join(''));
                     console.log(groqResp);
                     // To persist response and entire history here
-                    appendHistory(recipient, "assistant", groqResp.choices[0].message.content)
+                    appendHistory(username, "assistant", groqResp.choices[0].message.content)
 
                     resolve(groqResp.choices[0].message.content);
                 })
@@ -86,5 +88,8 @@ module.exports = {
             userName: groqUsername,
         });
         return payload
+    },
+    fetchChatHistory: function fetchChatByUserNameFromMem (username) {
+        return chatHistories[username];
     }
 };

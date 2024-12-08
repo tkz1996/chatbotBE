@@ -3,12 +3,14 @@ const aiAdapter = require('./ai_adapter/groq_interface.js');
 const crypto = require("crypto");
 const app = express();
 const WebSocket = require('websocket');
+const dynamoDb = require('./db/logic.js');
 require('dotenv').config();
 
 const defaultPort = 80;
 const defaultIP = '172.31.20.19';
 
 var port = process.env.PORT || defaultPort;
+var connectionUsernameMap = {}
 
 // parse request body as json using express library
 app.use(express.json())
@@ -26,27 +28,31 @@ server = app.listen(port, defaultIP, function (req, resp) {
 // init websockets
 var webSocketServer = new WebSocket.server({
     httpServer: server,
-    
 });
 
 webSocketServer.on('request', (request) => {
     const connection = request.accept(null, request.origin);
-    
-    // get user identifier
-    const userID = crypto.randomBytes(16).toString("hex");
+
+    // get connector identifier
+    const connectionID = crypto.randomBytes(16).toString("hex");
 
     connection.on('message', function (message) {
         // Handle incoming WebSocket messages here
         connection.sendUTF(message.utf8Data)
         messageData = JSON.parse(message.utf8Data);
-        console.log(messageData);
-        aiAdapter.callChatBot(userID, messageData.message).then(function (groqResp) {
+        if (!(connectionID in connectionUsernameMap)) {
+            connectionUsernameMap[connectionID] = messageData.userName
+        }
+        aiAdapter.callChatBot(messageData.userName, messageData.message).then(function (groqResp) {
             connection.sendUTF(aiAdapter.buildChatBotResponse(groqResp));
         });
     });
 
     connection.on('close', (reasonCode, description) => {
         // Handle WebSocket connection closure here
-        console.log('websocket closure message');
+        username = connectionUsernameMap[connectionID]
+        chatHistory = aiAdapter.fetchChatHistory(username)
+        dynamoDb.persistChat(username, chatHistory)
+        console.log('websocket closed and chat saved for username: %s', username);
     });
 });
