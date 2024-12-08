@@ -4,7 +4,6 @@ const crypto = require("crypto");
 const app = express();
 const defaultPort = 80;
 const WebSocket = require('websocket');
-const groqUsername = "GroqAI";
 require('dotenv').config();
 var port = process.env.PORT || defaultPort;
 
@@ -15,15 +14,6 @@ app.use(express.json())
 app.get('/test', (req, resp) => {
     console.log("/test API hit");
     resp.status(200).send('success');
-});
-
-app.post('/chat', (req, resp) => {
-    var chatResp;
-    console.log("message: %s", req.body);
-    aiAdapter.callChatBot(req.body['message']).then(function (message) {
-        chatResp = message;
-        resp.status(200).send(chatResp);
-    });
 });
 
 server = app.listen(port, function (req, resp) {
@@ -37,13 +27,16 @@ var webSocketServer = new WebSocket.server({
 
 webSocketServer.on('request', (request) => {
     const connection = request.accept(null, request.origin);
+    
+    // get user identifier
+    const userID = crypto.randomBytes(16).toString("hex");
 
     connection.on('message', function (message) {
         // Handle incoming WebSocket messages here
         connection.sendUTF(message.utf8Data)
         messageData = JSON.parse(message.utf8Data);
         console.log(messageData);
-        aiAdapter.callChatBot(messageData.message).then(function (groqResp) {
+        aiAdapter.callChatBot(userID, messageData.message).then(function (groqResp) {
             connection.sendUTF(aiAdapter.buildChatBotResponse(groqResp));
         });
     });
