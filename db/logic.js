@@ -42,6 +42,7 @@ module.exports = {
                     ":userName": userName,
                 }
             });
+            // callback to resolve if there are profiles found, return null if none, and only the first item in the response array
             docClient.send(fetchUserByUserName).then(function (result) {
                 console.log(result)
                 if (result.Count == 0) {
@@ -62,6 +63,7 @@ module.exports = {
                 history: history,
             }
         })
+        // asynchronously save as this does not impact UX
         docClient.send(saveChatHistory);
     },
     // load chat from db for given username
@@ -76,6 +78,7 @@ module.exports = {
                 ":userName": userName,
             }
         });
+        // wait for response from fetching chat history before returning 
         const result = await docClient.send(fetchHistoryByUserName)
         console.log(result)
         if (result.Items.length == 0) {

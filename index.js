@@ -45,11 +45,12 @@ app.post('/profile/create', (req, resp) => {
         // fix CORS error from browser
         resp.header("Access-Control-Allow-Origin", "*");
         resp.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        // if profile already exists, return 400
         if (!(profile == null)) {
             resp.status(400).send({ errorMessage: "profile already exists" });
             return;
         }
-        // save if does not exist
+        // save if profile does not exist
         dynamoDb.saveUser(req.body['username'], req.body['password']);
         resp.status(200).send({});
     })
@@ -62,12 +63,13 @@ app.post('/profile/login', (req, resp) => {
         resp.header("Access-Control-Allow-Origin", "*");
         resp.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
+        // if profile does not exist, return 400
         if (profile == null) {
             resp.status(400).send({ errorMessage: "profile does not exist" });
             return;
         }
 
-        // generate and compare password hash
+        // generate and compare password hash, return response accordingly
         const hash = crypto.createHash('sha256');
         const hashedPassword = hash.update(req.body['password']).digest('base64');
         if (!(profile.password == hashedPassword)) {
