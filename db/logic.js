@@ -1,5 +1,5 @@
 require('dotenv').config();
-const createHash = require("crypto");
+const crypto = require("crypto");
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, ScanCommand, QueryCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
 
@@ -18,8 +18,8 @@ const docClient = DynamoDBDocumentClient.from(client);
 module.exports = {
     // persist username and password in db 
     saveUser: function saveUserInDB(userName, password) {
-        const hash = createHash('sha256');
-        const hashedPassword = hash.write(password).digest('base64')
+        const hash = crypto.createHash('sha256');
+        const hashedPassword = hash.update(password).digest('base64')
         const saveNewUser = new PutCommand({
             TableName: 'users',
             Item: {
@@ -30,26 +30,28 @@ module.exports = {
         docClient.send(saveNewUser);
     },
     // query profile with given username
-    lookupProfile: function lookupProfileWithUsername(userName) {
-        const fetchUserByUserName = new QueryCommand({
-            TableName: 'users',
-            KeyConditionExpression: "#username = :userName",
-            ExpressionAttributeNames: {
-                "#username": "username"
-            },
-            ExpressionAttributeValues: {
-                ":userName": userName,
-            }
-        });
-        docClient.send(fetchUserByUserName).then(function (result) {
-            console.log(result)
-            if (result.Count == 0) {
-                console.log('no profile found')
-                return null
-            }
-            console.log(result.Items[0])
-            return result.Items[0];
-        });
+    lookupProfile: async function lookupProfileWithUsername(userName) {
+        return new Promise((resolve) => {
+            const fetchUserByUserName = new QueryCommand({
+                TableName: 'users',
+                KeyConditionExpression: "#username = :userName",
+                ExpressionAttributeNames: {
+                    "#username": "username"
+                },
+                ExpressionAttributeValues: {
+                    ":userName": userName,
+                }
+            });
+            docClient.send(fetchUserByUserName).then(function (result) {
+                console.log(result)
+                if (result.Count == 0) {
+                    console.log('no profile found')
+                    resolve(null)
+                }
+                console.log(result.Items[0])
+                resolve(result.Items[0]);
+            });
+        })
     },
     // store chat in db for given username
     persistChat: function persistChatHistoryToDB(username, history) {

@@ -8,8 +8,8 @@ const dynamoDb = require('./db/logic.js');
 require('dotenv').config();
 
 const defaultPort = 80;
-// const defaultIP = 'localhost';
-const defaultIP = '172.31.20.19';
+const defaultIP = 'localhost';
+// const defaultIP = '172.31.20.19';
 
 var port = process.env.PORT || defaultPort;
 // track which connection belongs to which user
@@ -37,6 +37,45 @@ app.post('/chat/history', (req, resp) => {
         resp.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         resp.status(200).send(history);
     });
+});
+
+// fetch chat history for given username
+app.post('/profile/create', (req, resp) => {
+    dynamoDb.lookupProfile(req.body['username']).then(function (profile) {
+        // fix CORS error from browser
+        resp.header("Access-Control-Allow-Origin", "*");
+        resp.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        if (!(profile == null)) {
+            resp.status(400).send({ errorMessage: "profile already exists" });
+            return;
+        }
+        // save if does not exist
+        dynamoDb.saveUser(req.body['username'], req.body['password']);
+        resp.status(200).send({});
+    })
+});
+
+// fetch chat history for given username
+app.post('/profile/login', (req, resp) => {
+    dynamoDb.lookupProfile(req.body['username']).then(function (profile) {
+        // fix CORS error from browser
+        resp.header("Access-Control-Allow-Origin", "*");
+        resp.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+
+        if (profile == null) {
+            resp.status(400).send({ errorMessage: "profile does not exist" });
+            return;
+        }
+
+        // generate and compare password hash
+        const hash = crypto.createHash('sha256');
+        const hashedPassword = hash.update(req.body['password']).digest('base64');
+        if (!(profile.password == hashedPassword)) {
+            resp.status(400).send({ errorMessage: "invalid password" });
+            return
+        }
+        resp.status(200).send({});
+    })
 });
 
 // start server
