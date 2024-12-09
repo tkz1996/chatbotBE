@@ -1,11 +1,10 @@
 require('dotenv').config();
 const createHash = require("crypto");
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, ScanCommand, QueryCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
 
 var dynamoDBKeyId = process.env.AWS_DYNAMO_DB_ACCESS_KEY_ID
 var dynamoDBAccessKey = process.env.AWS_DYNAMO_DB_SECRET_ACCESS_KEY
-
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, ScanCommand, QueryCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
 
 const client = new DynamoDBClient({
     region: 'ap-southeast-1',
@@ -17,6 +16,7 @@ const client = new DynamoDBClient({
 const docClient = DynamoDBDocumentClient.from(client);
 
 module.exports = {
+    // persist username and password in db 
     saveUser: function saveUserInDB(userName, password) {
         const hash = createHash('sha256');
         const hashedPassword = hash.write(password).digest('base64')
@@ -29,6 +29,7 @@ module.exports = {
         })
         docClient.send(saveNewUser);
     },
+    // query profile with given username
     lookupProfile: function lookupProfileWithUsername(userName) {
         const fetchUserByUserName = new QueryCommand({
             TableName: 'users',
@@ -50,6 +51,7 @@ module.exports = {
             return result.Items[0];
         });
     },
+    // store chat in db for given username
     persistChat: function persistChatHistoryToDB(username, history) {
         const saveChatHistory = new PutCommand({
             TableName: 'chat_history',
@@ -60,6 +62,7 @@ module.exports = {
         })
         docClient.send(saveChatHistory);
     },
+    // load chat from db for given username
     loadChatHistory: async function lookupHistoryWithUsername(userName) {
         const fetchHistoryByUserName = new QueryCommand({
             TableName: 'chat_history',
