@@ -117,7 +117,7 @@ module.exports = {
     initChatHistory: async function initChatHistoryFromDB(username) {
         const history = await dynamoDb.loadChatHistory(username);
         chatHistories[username] = history;
-        if (history.length < 1) {
+        if (history == null) {
             return [];
         }
         return massageChatData(username,history);
