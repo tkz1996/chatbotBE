@@ -37,7 +37,7 @@ function buildReq(history) {
 
 // build the chat history for given message, username and role
 function appendHistory(username, role, message) {
-    if (!(username in chatHistories)) {
+    if (chatHistories[username] == null) {
         chatHistories[username] = [
             {
                 role: 'system',
