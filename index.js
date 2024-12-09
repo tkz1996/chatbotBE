@@ -8,8 +8,8 @@ const dynamoDb = require('./db/logic.js');
 require('dotenv').config();
 
 const defaultPort = 80;
-const defaultIP = 'localhost';
-// const defaultIP = '172.31.20.19';
+// const defaultIP = 'localhost';
+const defaultIP = '172.31.20.19';
 
 var port = process.env.PORT || defaultPort;
 // track which connection belongs to which user
