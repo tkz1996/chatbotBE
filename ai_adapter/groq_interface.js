@@ -45,14 +45,13 @@ function appendHistory(username, role, message) {
             }
         ]
     }
-    var chatHistory = chatHistories[username]
-    chatHistory.push(
+    chatHistories[username].push(
         {
             role: role,
             content: message
         }
     )
-    return chatHistory
+    return chatHistories[username]
 }
 
 // helper function to massage the chat data for FE to consume
