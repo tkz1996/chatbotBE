@@ -52,6 +52,28 @@ function appendHistory(username, role, message) {
     return chatHistory
 }
 
+function massageChatData(username, history) {
+    messages = []
+    for (const chat of history) {
+        if (chat.role == "user") {
+            msg = {
+                message: chat.content,
+                userName: username
+            };
+        } else if (chat.role == "assistant") {
+            
+            msg = {
+                message: chat.content,
+                userName: groqUsername
+            };
+        } else {
+            continue;
+        }
+        messages.push(msg)
+    }
+    return messages
+}
+
 module.exports = {
     callChatBot: async function callGroqAPI(username, message) {
         return new Promise((resolve, reject) => {
@@ -89,7 +111,15 @@ module.exports = {
         });
         return payload
     },
-    fetchChatHistory: function fetchChatByUserNameFromMem (username) {
+    fetchChatHistoryFromMem: function fetchChatByUserNameFromMem(username) {
         return chatHistories[username];
+    },
+    initChatHistory: async function initChatHistoryFromDB(username) {
+        const history = await dynamoDb.loadChatHistory(username);
+        chatHistories[username] = history;
+        if (history.length < 1) {
+            return [];
+        }
+        return massageChatData(username,history);
     }
 };
