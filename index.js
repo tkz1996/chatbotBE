@@ -20,12 +20,15 @@ app.use(express.json());
 // enable CORS
 app.use(cors());
 
-// define apis to handle
+// ##### Define apis to handle #####
+// -------------------------------------
+// test API to check health of application
 app.get('/test', (req, resp) => {
     console.log("/test API hit");
     resp.status(200).send('success');
 });
 
+// fetch chat history for given username
 app.post('/chat/history', (req, resp) => {
     console.log(req.body);
     aiAdapter.initChatHistory(req.body['username']).then(function (history) {
@@ -46,12 +49,15 @@ var webSocketServer = new WebSocket.server({
     httpServer: server,
 });
 
+// websocket handshake request handling
 webSocketServer.on('request', (request) => {
+    // currently acceepting connection from all request origins
     const connection = request.accept(null, request.origin);
 
     // get connector identifier
     const connectionID = crypto.randomBytes(16).toString("hex");
 
+    // handling when message is received on websocket from client
     connection.on('message', function (message) {
         // send message back to the user for display
         connection.sendUTF(message.utf8Data)
@@ -67,8 +73,9 @@ webSocketServer.on('request', (request) => {
         });
     });
 
+    // handling when client closes connection
     connection.on('close', (reasonCode, description) => {
-        // Handle WebSocket connection closure
+        // fetch username from connectionID
         username = connectionUsernameMap[connectionID]
         if (!(username == undefined)) {
             // if a valid username has interacted with the page, save the chat in db
